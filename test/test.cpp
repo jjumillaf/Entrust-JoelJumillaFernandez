@@ -47,10 +47,7 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
                 inPage = false;
                 currentPageLines = 0;
             }
-
-            // Extract page number from the line
-            pageNumber = std::stoi(line.substr(5));
-            continue;
+            pageNumber++;
         }
 
         // If not a page marker, we are in a page
@@ -64,8 +61,6 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
             violation.pageNumber = pageNumber;
             violation.lineIndexInPage = currentPageLines; // Line index within the current page
             violations.push_back(violation);
-            // No need to check further lines in this page
-            currentPageLines = maxLines + 1; // Forcefully set to maxLines + 1 to break out of the loop
         }
     }
 
@@ -73,7 +68,7 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
     if (inPage && currentPageLines > maxLines) {
         conditionsMet = false;
         Violation violation;
-        violation.pageNumber = pageNumber+1;
+        violation.pageNumber = pageNumber;
         violation.lineIndexInPage = 0; // Indicates exceeding maxLines for the page
         violations.push_back(violation);
     }
