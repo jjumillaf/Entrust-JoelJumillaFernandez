@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Compile the C++ files if not already compiled
-# (Uncomment these lines if needed)
 g++ -o app app.cpp
 g++ -o tested test/test.cpp
 
