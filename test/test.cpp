@@ -38,7 +38,6 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
             // If already in a page, check if conditions for the previous page were met
             if (inPage) {
                 if (currentPageLines > maxLines) {
-                    std::cout << currentPageLines << "\n";
                     conditionsMet = false;
                     Violation violation;
                     violation.pageNumber = pageNumber;
