@@ -30,7 +30,6 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
 
         // Ignore empty lines
         if (line.empty()) {
-            currentPageLines=0;
             continue;
         }
 
@@ -39,7 +38,7 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
             // If already in a page, check if conditions for the previous page were met
             if (inPage) {
                 if (currentPageLines > maxLines) {
-                    std::cout << "hola\n";
+                    std::cout << currentPageLines << "\n";
                     conditionsMet = false;
                     Violation violation;
                     violation.pageNumber = pageNumber;
@@ -47,8 +46,10 @@ bool checkMaxConditions(const std::string& inputFile, int maxChars, int maxLines
                     violations.push_back(violation);
                 }
                 inPage = false;
+                currentPageLines = 0;
             }
             pageNumber++;
+            continue;
         }
 
         // If not a page marker, we are in a page
