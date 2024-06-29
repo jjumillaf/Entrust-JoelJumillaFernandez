@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Compile the C++ files if not already compiled
-g++ -o app app.cpp
+g++ -o app src/paginator.cpp
 g++ -o tested test/test.cpp
 
 # Execute the app passing the three text files as arguments
