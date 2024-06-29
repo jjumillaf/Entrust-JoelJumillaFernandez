@@ -8,7 +8,7 @@
 #include <chrono>
 
 // Function to paginate the content of a text based on maximum number of characters per line and maximum number of lines per page.
-std::pair<int, std::map<std::string, int>> paginateContentAndWrite(const std::string& content, int maxChars, int maxLines, const std::string& outputFile) {
+std::tuple<std::string, int, std::map<std::string, int>> paginateContent(const std::string& content, int maxChars, int maxLines) {
     // Start measuring time for pagination
     auto startPagination = std::chrono::steady_clock::now();
 
@@ -33,7 +33,7 @@ std::pair<int, std::map<std::string, int>> paginateContentAndWrite(const std::st
         wordFrequencies[word]++;
         totalWords++; // Increment total words count
         
-        // Case of use where a words is longer than maxChars
+        // Case of use where a word is longer than maxChars
         if (wordLength > maxChars) {
             // The word will be written starting in a separate line, in parts equal to maxChars
             for (int i = 0; i < wordLength; i += maxChars) {
@@ -59,31 +59,31 @@ std::pair<int, std::map<std::string, int>> paginateContentAndWrite(const std::st
                 lineLength += part.length();
             }
         } else {
-        // Check if adding the next word would exceed the maximum allowed characters per line. To add the next word, we also add a space (+1).
-        if (lineLength + wordLength + 1 > maxChars) {
-            // If so, add the current line to the current page and reset the line.
-            buffer << currentLine << "\n";
-            currentLine.clear();
-            lineLength = 0;
-            nlines++;
-            
-            // Also check if the current page has reached its maximum number of lines.
-            if (nlines == maxLines) {
-                buffer << "\nPage " << pageNumber << "\n\n";
-                pageNumber++;
-                nlines = 0;
+            // Check if adding the next word would exceed the maximum allowed characters per line. To add the next word, we also add a space (+1).
+            if (lineLength + wordLength + 1 > maxChars) {
+                // If so, add the current line to the current page and reset the line.
+                buffer << currentLine << "\n";
+                currentLine.clear();
+                lineLength = 0;
+                nlines++;
+                
+                // Also check if the current page has reached its maximum number of lines.
+                if (nlines == maxLines) {
+                    buffer << "\nPage " << pageNumber << "\n\n";
+                    pageNumber++;
+                    nlines = 0;
+                }
             }
-        }
         
-        // Add a space to the current line if it is not empty yet, to separate words properly.
-        if (!currentLine.empty()) {
-            currentLine += " ";
-            lineLength++;
-        }
+            // Add a space to the current line if it is not empty yet, to separate words properly.
+            if (!currentLine.empty()) {
+                currentLine += " ";
+                lineLength++;
+            }
         
-        // Append the current word to the current line.
-        currentLine += word;
-        lineLength += wordLength;
+            // Append the current word to the current line.
+            currentLine += word;
+            lineLength += wordLength;
         }
     }
 
@@ -92,34 +92,36 @@ std::pair<int, std::map<std::string, int>> paginateContentAndWrite(const std::st
         buffer << currentLine << "\n";
     }
 
-    for (int i = nlines; i < maxLines-1; ++i) {
+    for (int i = nlines; i < maxLines - 1; ++i) {
         buffer << "\n";
     }
     
     buffer << "\nPage " << pageNumber << "\n\n";
-
-    // Open the output file.
-    std::ofstream out(outputFile.c_str());
-    
-    // Check if the file was opened successfully.
-    if (!out.is_open()) {
-        std::cerr << "Error opening the output file " << outputFile << std::endl;
-        return {0, {}}; // Return early with error state
-    }
-
-    // Write the buffered content to the output file. We make use of a buffer so that we reduce the number of I/O operations.
-    out << buffer.str();
-
-    // Close the output file.
-    out.close();
 
     // End measuring time for pagination
     auto endPagination = std::chrono::steady_clock::now();
     auto elapsedPagination = std::chrono::duration_cast<std::chrono::milliseconds>(endPagination - startPagination);
     std::cout << "Time elapsed (Pagination): " << elapsedPagination.count() << " ms" << std::endl;
 
-    // Return the total number of words and the frequencies of each word
-    return {totalWords, wordFrequencies};
+    // Return the paginated content, total number of words, and word frequencies
+    return {buffer.str(), totalWords, wordFrequencies};
+}
+
+void writePagination(const std::string& paginatedContent, const std::string& outputFile) {
+    // Open the output file.
+    std::ofstream out(outputFile.c_str());
+    
+    // Check if the file was opened successfully.
+    if (!out.is_open()) {
+        std::cerr << "Error opening the output file " << outputFile << std::endl;
+        return; // Return early with error state
+    }
+
+    // Write the paginated content to the output file.
+    out << paginatedContent;
+
+    // Close the output file.
+    out.close();
 }
 
 // Function to display the top 10 words with their frequencies
@@ -144,7 +146,7 @@ void displayTopWords(const std::map<std::string, int>& wordFrequencies, int tota
 
 int main(int argc, char* argv[]) {
     // Check if the correct number of arguments are passed
-    if (argc!= 5) {
+    if (argc != 5) {
         std::cerr << "Usage: " << argv[0] << " <input_file> <output_file> <max_chars> <max_lines>\n";
         return 1;
     }
@@ -165,12 +167,14 @@ int main(int argc, char* argv[]) {
     // Read the entire content of the input file into a string
     std::string content((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
 
-    // Paginate the content based on the defined constraints and write directly to the output file
-    auto result = paginateContentAndWrite(content, maxChars, maxLines, outputFile);
+    // Paginate the content based on the defined constraints
+    auto result = paginateContent(content, maxChars, maxLines);
+    std::string paginatedContent = std::get<0>(result);
+    int totalWords = std::get<1>(result);
+    std::map<std::string, int> wordFrequencies = std::get<2>(result);
 
-    // Extract the returned values
-    int totalWords = result.first;
-    std::map<std::string, int> wordFrequencies = result.second;
+    // Write the paginated content directly to the output file
+    writePagination(paginatedContent, outputFile);
 
     // Display the top 10 words
     displayTopWords(wordFrequencies, totalWords);
